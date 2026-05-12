@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mocha Business Expert 🐾</title>
+<style>
+  :root {
+    --bg-color: #f8f8f8;
+    --black: #000000;
+    --dark-grey: #333333;
+    --white: #ffffff;
+    --shadow: 6px 6px 0px var(--black);
+  }
+
+  body {
+    background-color: var(--bg-color);
+    background-image: url('https://www.transparenttextures.com/patterns/white-marble.png');
+    font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    padding: 20px;
+    padding-bottom: 120px; 
+    color: var(--black);
+  }
+
+  .card {
+    background-color: var(--white);
+    border: 3px solid var(--black);
+    box-shadow: var(--shadow);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.1s ease;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bottom-calc-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100; 
+    width: 90%;
+    max-width: 600px;
+    margin: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 20px;
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .full-width { grid-column: span 2; }
+
+  /* Mocha 寫真館 */
+  .photo-gallery-card { background-color: var(--black); color: var(--white); }
+  .photo-gallery-card h2 { margin-top: 0; }
+  .photo-slider { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+  .slide-img { height: 120px; width: 120px; object-fit: cover; border-radius: 8px; border: 2px solid var(--white); flex-shrink: 0; }
+
+  .big-btn {
+    background: var(--black);
+    color: var(--white);
+    border: 2px solid var(--black);
+    box-shadow: 3px 3px 0px var(--dark-grey);
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  /* 訂單紀錄清單 */
+  .record-item {
+    border-bottom: 2px dashed var(--black);
+    padding: 15px 0 10px 0;
+  }
+  .record-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.05rem; }
+  .record-date { font-size: 0.8rem; color: #666; margin-top: 3px; }
+  .record-details { font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .profit-tag { color: #008800; font-weight: bold; font-size: 0.95rem; }
+  
+  /* 修改與刪除按鈕 */
+  .action-btns { display: flex; gap: 8px; }
+  .action-btn { 
+    background: var(--white); border: 2px solid var(--black); border-radius: 5px; 
+    padding: 3px 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 2px 2px 0px var(--black);
+  }
+  .action-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px var(--black); }
+
+  /* 彈出視窗 */
+  .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
+  .modal-content {
+    background-color: var(--white);
+    margin: 20px auto; 
+    padding: 20px;
+    border: 4px solid var(--black);
+    box-shadow: var(--shadow);
+    width: 85%;
+    max-width: 400px;
+    border-radius: 15px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .input-group { margin-bottom: 12px; text-align: left; }
+  .input-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 0.9rem; }
+  .input-group input, .input-group select {
+    width: 100%; padding: 8px; border: 2px solid var(--black); border-radius: 5px; box-sizing: border-box;
+    font-family: inherit; font-size: 1rem;
+  }
+
+  /* 懸浮 Mocha 照片 */
+  .movable-photo {
+    position: fixed; top: 150px; right: 10px; width: 65px; height: 65px;
+    background-color: var(--white); border: 3px solid var(--black);
+    box-shadow: 4px 4px 0px var(--black); border-radius: 50%;
+    z-index: 150; overflow: hidden; touch-action: none; cursor: grab;
+  }
+  .movable-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .close-btn { position: absolute; top: 5px; right: 10px; font-size: 24px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="dragPhoto" class="movable-photo">
+  <img src="mocha.jpg" alt="Mocha">
+</div>
+
+<div class="grid-container">
+  
+  <div class="card photo-gallery-card full-width">
+    <h2>🐾 Mocha 寫真館</h2>
+    <div class="photo-slider">
+      <img src="mocha.jpg" class="slide-img">
+      <img src="https://images.unsplash.com/photo-1587304192667-1eb70f6b4b45?w=300" class="slide-img">
+      <img src="https://images.unsplash.com/photo-1605634563445-5df18fcde004?w=300" class="slide-img">
+    </div>
+  </div>
+
+  <div class="card revenue-card full-width">
+    <h3 style="margin:0;">💰 每月結算盈利</h3>
+    <input type="month" id="month-filter" style="margin-top: 10px; padding: 5px 10px; border: 2px solid var(--black); border-radius: 5px; font-family: inherit; font-weight: bold;" onchange="renderOrders()">
+    <h2 id="total-profit-display" style="margin: 10px 0; font-size: 2.5rem; color: var(--black);">+$0</h2>
+  </div>
+
+  <div class="card records-card full-width">
+    <h3 style="margin:0 0 10px 0;">📋 訂單紀錄 <span style="font-size:0.8rem; color:#666;">(依月份顯示)</span></h3>
+    <div id="records-list">
+      </div>
+    <button class="big-btn" style="background: #000; color: #fff; margin-top: 20px;" onclick="openRecordModal()">＋ 新增訂單紀錄</button>
+  </div>
+
+</div>
+
+<div class="card bottom-calc-container">
+  <h3 style="margin:0; font-size: 1rem;">🧮 快速換算計算器</h3>
+  <button class="big-btn" onclick="openCalculator()">打開精算機 🧮</button>
+</div>
+
+<div id="recordModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeRecordModal()">&times;</span>
+    <h2 id="modal-title" style="margin-top: 0;">📝 新增訂單紀錄</h2>
+    
+    <div class="input-group">
+      <label>📅 訂單日期：</label>
+      <input type="date" id="rec-date">
+    </div>
+
+    <div class="input-group">
+      <label>顧客電話 / 姓名：</label>
+      <input type="text" id="rec-name" placeholder="例如: 98765432 陳小姐">
+    </div>
+
+    <div class="input-group">
+      <label>顧客付款價錢 (HKD)：</label>
+      <input type="number" id="rec-customer-pay" placeholder="客人給你的錢">
+    </div>
+
+    <hr style="border: 1px dashed #ccc;">
+    <p style="font-size: 0.8rem; color: #666;">以下計算買貨成本：</p>
+
+    <div class="input-group">
+      <label>買貨幣值：</label>
+      <select id="rec-currency">
+        <option value="HKD">港幣 (HKD)</option>
+        <option value="JPY">日圓 (JPY) 🇯🇵</option>
+        <option value="TWD">台幣 (TWD) 🇹🇼</option>
+        <option value="USD">美元 (USD) 🇺🇸</option>
+        <option value="GBP">英鎊 (GBP) 🇬🇧</option>
+        <option value="EUR">歐羅 (EUR) 🇪🇺</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>商品買入價：</label>
+      <input type="number" id="rec-item-cost" placeholder="外幣或港幣金額">
+    </div>
+
+    <div class="input-group">
+      <label>運費 (HKD)：</label>
+      <input type="number" id="rec-shipping" value="0">
+    </div>
+
+    <div class="input-group">
+      <label>付款方式：</label>
+      <select id="rec-method">
+        <option value="FPS">FPS</option>
+        <option value="PayMe">PayMe</option>
+        <option value="Alipay">Alipay</option>
+        <option value="Cash">現金</option>
+      </select>
+    </div>
+
+    <button class="big-btn" onclick="saveOrder()">儲存並計算利潤 💾</button>
+  </div>
+</div>
+
+<div id="myCalculator" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeCalculator()">&times;</span>
+    <h2 style="margin-top: 0;">🧮 快速成本換算</h2>
+    <div class="input-group">
+        <label>幣值：</label>
+        <select id="calc-curr">
+          <option value="JPY">日圓 (JPY) 🇯🇵</option>
+          <option value="TWD">台幣 (TWD) 🇹🇼</option>
+          <option value="USD">美元 (USD) 🇺🇸</option>
+          <option value="GBP">英鎊 (GBP) 🇬🇧</option>
+          <option value="EUR">歐羅 (EUR) 🇪🇺</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label>外幣金額：</label>
+        <input type="number" id="calc-amt" placeholder="輸入數字...">
+    </div>
+    <button class="big-btn" onclick="quickCalc()">計算 (已含 1.95% 手續費) ✨</button>
+    <h3 id="calc-res" style="text-align:center; color: var(--black); margin-top: 20px;"></h3>
+  </div>
+</div>
+
+<script>
+  let liveRates = { JPY: 0.051, TWD: 0.24, USD: 7.82, GBP: 9.85, EUR: 8.45 };
+  
+  // 🔥 新增的「資料庫大腦」：用來記住每一筆訂單的所有詳細資料
+  let ordersData = [];
+  let editingId = null; // 紀錄目前正在「修改」哪一筆，如果是 null 代表是新增
+
+  function getTodayDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getTodayMonth() {
+    return getTodayDate().substring(0, 7); // 取得 YYYY-MM 格式
+  }
+
+  window.onload = async function() {
+    // 設定預設月份為當月
+    document.getElementById("month-filter").value = getTodayMonth();
+
+    try {
+      let res = await fetch('https://open.er-api.com/v6/latest/HKD');
+      let data = await res.json();
+      for(let key in liveRates) { liveRates[key] = 1 / data.rates[key]; }
+    } catch (e) { console.log("連線失敗，使用預設匯率"); }
+  };
+
+  function openRecordModal(id = null) { 
+    editingId = id;
+    const modalTitle = document.getElementById("modal-title");
+
+    if (id !== null) {
+      // ✏️ 如果是按了「修改」，就把這筆資料塞進表格裡
+      modalTitle.innerText = "✏️ 修改訂單紀錄";
+      const order = ordersData.find(o => o.id === id);
+      document.getElementById("rec-date").value = order.date;
+      document.getElementById("rec-name").value = order.name;
+      document.getElementById("rec-customer-pay").value = order.customerPay;
+      document.getElementById("rec-currency").value = order.currency;
+      document.getElementById("rec-item-cost").value = order.itemCost;
+      document.getElementById("rec-shipping").value = order.shipping;
+      document.getElementById("rec-method").value = order.method;
+    } else {
+      // 🆕 如果是按了「新增」，就清空表格
+      modalTitle.innerText = "📝 新增訂單紀錄";
+      document.getElementById("rec-date").value = getTodayDate();
+      document.getElementById("rec-name").value = "";
+      document.getElementById("rec-customer-pay").value = "";
+      document.getElementById("rec-item-cost").value = "";
+      document.getElementById("rec-shipping").value = "0";
+    }
+
+    document.getElementById("recordModal").style.display = "block"; 
+  }
+  
+  function closeRecordModal() { document.getElementById("recordModal").style.display = "none"; }
+  function openCalculator() { document.getElementById("myCalculator").style.display = "block"; }
+  function closeCalculator() { document.getElementById("myCalculator").style.display = "none"; }
+
+  function quickCalc() {
+    let curr = document.getElementById("calc-curr").value;
+    let amt = parseFloat(document.getElementById("calc-amt").value) || 0;
+    let res = amt * liveRates[curr] * 1.0195;
+    document.getElementById("calc-res").innerHTML = `約 <span style="font-size: 1.5rem;">HKD $${res.toFixed(1)}</span>`;
+  }
+
+  function saveOrder() {
+    let date = document.getElementById("rec-date").value; 
+    let name = document.getElementById("rec-name").value || "未名顧客";
+    let customerPay = parseFloat(document.getElementById("rec-customer-pay").value) || 0;
+    let currency = document.getElementById("rec-currency").value;
+    let itemCost = parseFloat(document.getElementById("rec-item-cost").value) || 0;
+    let shipping = parseFloat(document.getElementById("rec-shipping").value) || 0;
+    let method = document.getElementById("rec-method").value;
+
+    let rate = (currency === "HKD") ? 1 : liveRates[currency];
+    let bankFee = (currency === "HKD") ? 1 : 1.0195;
+    let actualCost = (itemCost * rate * bankFee) + shipping;
+    let profit = customerPay - actualCost;
+
+    // 建立這筆訂單的資料包
+    const orderObj = {
+      id: editingId !== null ? editingId : Date.now(), // 用時間戳記當作這張單的獨特 ID
+      date, name, customerPay, currency, itemCost, shipping, method, profit
+    };
+
+    if (editingId !== null) {
+      // 替換掉原本修改的資料
+      const index = ordersData.findIndex(o => o.id === editingId);
+      ordersData[index] = orderObj;
+    } else {
+      // 存入新資料庫
+      ordersData.push(orderObj);
+    }
+
+    // 如果這張單的月份不在目前篩選的月份，貼心地幫你自動跳過去看！
+    const orderMonth = date.substring(0, 7);
+    document.getElementById("month-filter").value = orderMonth;
+
+    renderOrders();
+    closeRecordModal();
+  }
+
+  function deleteOrder(id) {
+    if(confirm("確定要刪除這筆訂單嗎？🗑️")) {
+      ordersData = ordersData.filter(o => o.id !== id);
+      renderOrders();
+    }
+  }
+
+  // 🔥 負責把訂單畫出來、並且計算當月盈利的超強函式！
+  function renderOrders() {
+    const list = document.getElementById("records-list");
+    list.innerHTML = ""; // 先清空版面
+
+    const selectedMonth = document.getElementById("month-filter").value;
+    let monthlyProfit = 0;
+    let hasOrders = false;
+
+    // 先照日期從最新排到最舊
+    ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    ordersData.forEach(order => {
+      const orderMonth = order.date.substring(0, 7);
+      
+      // 只有符合「篩選月份」的訂單才會顯示出來喔！
+      if (orderMonth === selectedMonth) {
+        hasOrders = true;
+        monthlyProfit += order.profit;
+
+        const div = document.createElement("div");
+        div.className = "record-item";
+        div.innerHTML = `
+          <div class="record-header"><span>📞 ${order.name}</span><span>收 $${order.customerPay}</span></div>
+          <div class="record-date">📅 日期：${order.date}</div>
+          <div class="record-details">
+            <div>
+              <span>💳 ${order.method}</span><br>
+              <span class="profit-tag">利潤: $${order.profit.toFixed(1)}</span>
+            </div>
+            <div class="action-btns">
+              <button class="action-btn" onclick="openRecordModal(${order.id})">✏️ 修改</button>
+              <button class="action-btn" onclick="deleteOrder(${order.id})" style="color:red;">🗑️</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      }
+    });
+
+    if (!hasOrders) {
+      list.innerHTML = `<div style="text-align:center; padding: 20px; color: #888;">這個月還沒有訂單喔！趕快去賺錢錢！💪</div>`;
+    }
+
+    // 更新當月總結算！
+    let profitDisplay = document.getElementById("total-profit-display");
+    if (monthlyProfit >= 0) {
+      profitDisplay.innerText = "+$" + monthlyProfit.toFixed(1);
+      profitDisplay.style.color = "#008800"; // 賺錢顯示綠色
+    } else {
+      profitDisplay.innerText = "-$" + Math.abs(monthlyProfit).toFixed(1);
+      profitDisplay.style.color = "red"; // 虧錢顯示紅色警報
+    }
+  }
+
+  // 🐶 拖曳 Mocha 照片
+  dragElement(document.getElementById("dragPhoto"));
+  function dragElement(elmnt) {
+    var p1=0, p2=0, p3=0, p4=0;
+    elmnt.onmousedown = dMS; elmnt.ontouchstart = dTS;
+    function dMS(e) { e.preventDefault(); p3=e.clientX; p4=e.clientY; document.onmouseup=cDE; document.onmousemove=eD; }
+    function eD(e) { p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY; elmnt.style.top=(elmnt.offsetTop-p2)+"px"; elmnt.style.left=(elmnt.offsetLeft-p1)+"px"; }
+    function dTS(e) { p3=e.touches[0].clientX; p4=e.touches[0].clientY; document.ontouchend=cDE; document.ontouchmove=eT; }
+    function eT(e) { p1=p3-e.touches[0].clientX; p2=p4-e.touches[0].clientY; p3=e.touches[0].clientX; p4=e.touches[0].clientY; elmnt.style.top=(elmnt.offsetTop-p2)+"px"; elmnt.style.left=(elmnt.offsetLeft-p1)+"px"; }
+    function cDE() { document.onmouseup=null; document.onmousemove=null; document.ontouchend=null; document.ontouchmove=null; }
+  }
+</script>
+
+</body>
+</html>
